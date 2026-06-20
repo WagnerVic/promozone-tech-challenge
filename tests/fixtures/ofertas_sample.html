@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!--
+  Fixture que replica a estrutura dos cards de /ofertas, cobrindo casos de borda:
+  preço com centavos+milhar, id catálogo vs anúncio, card sem desconto (filtrado)
+  e card quebrado (descartado).
+-->
+<html lang="pt-BR"><body>
+<section class="ofertas">
+
+  <!-- Card 1: CATÁLOGO (/p/MLB), com desconto, preço com milhar + centavos -->
+  <div class="andes-card poly-card poly-card--grid-card">
+    <a class="poly-component__title" href="https://www.mercadolivre.com.br/fone-bluetooth-xyz/p/MLB111111">
+      Fone Bluetooth XYZ Pro
+    </a>
+    <div class="poly-price__current">
+      <span class="andes-money-amount__fraction">999</span>
+      <span class="andes-money-amount__cents andes-money-amount__cents--superscript-24">90</span>
+    </div>
+    <s class="andes-money-amount andes-money-amount--previous">
+      <span class="andes-money-amount__fraction">1.299</span>
+      <span class="andes-money-amount__cents">90</span>
+    </s>
+    <span class="poly-price__disc_label andes-money-amount__discount">23% OFF</span>
+    <span class="poly-component__seller">Por Loja Oficial XYZ</span>
+    <img class="poly-component__picture" src="https://http2.mlstatic.com/img-mlb111111.webp">
+  </div>
+
+  <!-- Card 2: ANÚNCIO (MLB-), com desconto, sem centavos no preço -->
+  <div class="andes-card poly-card poly-card--grid-card">
+    <a class="poly-component__title" href="https://produto.mercadolivre.com.br/MLB-2222222-tenis-corrida">
+      Tênis de Corrida Masculino
+    </a>
+    <div class="poly-price__current">
+      <span class="andes-money-amount__fraction">150</span>
+    </div>
+    <s class="andes-money-amount andes-money-amount--previous">
+      <span class="andes-money-amount__fraction">300</span>
+    </s>
+    <span class="poly-component__seller">Por Esportes BR</span>
+    <img class="poly-component__picture" data-src="https://http2.mlstatic.com/img-mlb2222222.webp">
+  </div>
+
+  <!-- Card 3: SEM desconto (só preço atual) → is_real_promotion False, deve ser filtrado -->
+  <div class="andes-card poly-card poly-card--grid-card">
+    <a class="poly-component__title" href="https://www.mercadolivre.com.br/caneca-comum/p/MLB333333">
+      Caneca Comum
+    </a>
+    <div class="poly-price__current">
+      <span class="andes-money-amount__fraction">50</span>
+      <span class="andes-money-amount__cents">00</span>
+    </div>
+    <span class="poly-component__seller">Por Loja Casa</span>
+  </div>
+
+  <!-- Card 4: QUEBRADO (sem título) → parse_card retorna None, descartado -->
+  <div class="andes-card poly-card poly-card--grid-card">
+    <div class="poly-price__current">
+      <span class="andes-money-amount__fraction">10</span>
+    </div>
+  </div>
+
+</section>
+</body></html>
