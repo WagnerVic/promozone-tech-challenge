@@ -1,0 +1,19 @@
+# --- Coleta ---
+httpx==0.28.1
+beautifulsoup4==4.12.3
+lxml==5.3.0
+tenacity==9.0.0
+
+# --- Modelo / config ---
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# --- API ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# --- BigQuery / GCP ---
+google-cloud-bigquery==3.27.0
+
+# --- Observabilidade ---
+python-json-logger==3.2.1
