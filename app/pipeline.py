@@ -20,6 +20,7 @@ class PipelineResult:
     inserted: int | None = None
     duplicates: int | None = None
     persisted: bool = False
+    walled: bool = False
     products: list[ProductSchema] = field(default_factory=list)
 
     def summary(self) -> dict:
@@ -31,6 +32,7 @@ class PipelineResult:
             "inserted": self.inserted,
             "duplicates": self.duplicates,
             "persisted": self.persisted,
+            "walled": self.walled,
         }
 
 
@@ -54,6 +56,7 @@ def run_pipeline(
         collected=len(collected),
         promotions=len(promotions),
         filtered_out=len(collected) - len(promotions),
+        walled=collector.walled,
         products=promotions,
     )
 

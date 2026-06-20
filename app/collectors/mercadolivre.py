@@ -45,6 +45,7 @@ class MercadoLivreCollector(BaseCollector):
         self.execution_id = execution_id or str(uuid.uuid4())[:8]
         self.sources = sources or settings.SOURCES
         self.max_pages = max_pages or settings.MAX_PAGES_PER_SOURCE
+        self.walled = False
         self.headers = {
             "User-Agent": settings.USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -98,6 +99,7 @@ class MercadoLivreCollector(BaseCollector):
             if not page_products:
                 # 0 cards pode ser fim da paginação OU muro anti-bot — sinais distintos.
                 if _looks_walled(str(resp.url), html):
+                    self.walled = True
                     logger.warning(
                         "0 cards — possível muro anti-bot",
                         extra={"execution_id": self.execution_id, "source": source,
