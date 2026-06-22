@@ -1,0 +1,23 @@
+# Ambiente e caches locais (recriados dentro da imagem)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Segredos e config local — NUNCA entram na imagem
+.env
+
+# Git e material não-versionado de estudo
+.git/
+.gitignore
+.task-context/
+
+# Não fazem parte do runtime
+tests/
+sql/
+.github/
+Dockerfile
+docker-compose.yml
+.dockerignore
+*.md

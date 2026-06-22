@@ -1,0 +1,15 @@
+services:
+  coletor:
+    build: .
+    image: promozone-coletor:latest
+    ports:
+      - "8000:8080"          # host 8000 -> container 8080
+    env_file:
+      - .env
+    environment:
+      # Aponta o SDK para o ADC montado abaixo (local). No Cloud Run isso não existe:
+      # a credencial vem automática da service account anexada.
+      - GOOGLE_APPLICATION_CREDENTIALS=/gcp/adc.json
+    volumes:
+      # Monta o ADC do usuário (read-only) para o container falar com o BigQuery localmente.
+      - ${HOME}/.config/gcloud/application_default_credentials.json:/gcp/adc.json:ro
