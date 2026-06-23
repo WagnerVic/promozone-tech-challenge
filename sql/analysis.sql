@@ -29,3 +29,51 @@ SELECT
 FROM `promozone-desafio.promozone.promotions`
 GROUP BY category_name, tipo
 ORDER BY category_name, promocoes DESC;
+
+-- 4) Top 10 maiores descontos no estado atual (view current_promotions = última linha por item).
+SELECT
+  title,
+  category_name,
+  original_price                    AS de,
+  price                             AS por,
+  discount_percent                  AS desconto_pct,
+  IFNULL(promotion_type, 'COMUM')   AS tipo
+FROM `promozone-desafio.promozone.current_promotions`
+WHERE discount_percent IS NOT NULL
+ORDER BY discount_percent DESC
+LIMIT 10;
+
+-- 5) Mudanças de preço (o diferencial: o dedupe_key inclui preço → histórico).
+--    Itens vistos em mais de um preço; mostra mín/máx, preço atual e a variação.
+WITH historico AS (
+  SELECT
+    item_id,
+    COUNT(DISTINCT price) AS precos_distintos,
+    MIN(price)            AS menor_preco,
+    MAX(price)            AS maior_preco
+  FROM `promozone-desafio.promozone.promotions`
+  GROUP BY item_id
+  HAVING COUNT(DISTINCT price) > 1
+)
+SELECT
+  cur.title,
+  cur.category_name,
+  h.menor_preco,
+  h.maior_preco,
+  cur.price                                                   AS preco_atual,
+  ROUND((h.maior_preco - h.menor_preco) / h.maior_preco * 100, 1) AS variacao_pct
+FROM historico h
+JOIN `promozone-desafio.promozone.current_promotions` cur USING (item_id)
+ORDER BY variacao_pct DESC
+LIMIT 10;
+
+-- 6) Top 10 lojas por número de promoções no estado atual.
+SELECT
+  seller,
+  COUNT(*)                          AS promocoes,
+  ROUND(AVG(discount_percent), 1)   AS desconto_medio_pct
+FROM `promozone-desafio.promozone.current_promotions`
+WHERE seller IS NOT NULL
+GROUP BY seller
+ORDER BY promocoes DESC
+LIMIT 10;
