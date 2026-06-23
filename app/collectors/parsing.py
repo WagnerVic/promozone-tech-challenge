@@ -49,10 +49,24 @@ def _text(node: Tag | None) -> str | None:
     return node.get_text(" ", strip=True) or None
 
 
+def _extract_promotion_type(card: Tag) -> str | None:
+    """Badge do card (ex.: 'OFERTA DO DIA'/'RELÂMPAGO'). None quando é desconto comum."""
+    for sel in (S.HIGHLIGHT, S.HIGHLIGHT_COUNTDOWN):
+        txt = _text(card.select_one(sel))
+        # Whitelist consciente por "OFERTA": o mesmo seletor de highlight carrega selos
+        # não-promocionais ("MAIS VENDIDO" etc.). Badge fora do padrão OFERTA* cai em
+        # None de propósito — preferimos NULL a sujar a coluna com não-promoção.
+        if txt and "OFERTA" in txt.upper():
+            return " ".join(txt.upper().split())
+    return None
+
+
 def parse_card(
     card: Tag,
     *,
     source: str,
+    category: str,
+    category_name: str,
     execution_id: str,
     collected_at: datetime,
 ) -> ProductSchema | None:
@@ -101,6 +115,9 @@ def parse_card(
         seller=seller,
         image_url=image_url,
         source=source,
+        category=category,
+        category_name=category_name,
+        promotion_type=_extract_promotion_type(card),
         execution_id=execution_id,
         collected_at=collected_at,
     )
@@ -110,6 +127,8 @@ def parse_offers_html(
     html: str,
     *,
     source: str,
+    category: str,
+    category_name: str,
     execution_id: str,
     collected_at: datetime,
 ) -> list[ProductSchema]:
@@ -118,7 +137,8 @@ def parse_offers_html(
     for card in soup.select(S.CARD):
         try:
             product = parse_card(
-                card, source=source, execution_id=execution_id, collected_at=collected_at
+                card, source=source, category=category, category_name=category_name,
+                execution_id=execution_id, collected_at=collected_at,
             )
         except Exception:
             # Um card torto não derruba a página inteira.

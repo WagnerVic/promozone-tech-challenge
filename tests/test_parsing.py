@@ -4,8 +4,11 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from app.collectors.parsing import (
+    _extract_promotion_type,
     extract_item_id,
     parse_offers_html,
     parse_price,
@@ -74,7 +77,9 @@ def test_parse_offers_html_resiliente_a_excecao(ofertas_html, collected_at, monk
 
     monkeypatch.setattr(parsing, "parse_card", flaky)
     prods = parsing.parse_offers_html(
-        ofertas_html, source="ofertas", execution_id="e", collected_at=collected_at
+        ofertas_html, source="ofertas", category="MLB1051",
+        category_name="Celulares e Telefones", execution_id="e",
+        collected_at=collected_at,
     )
     # O 1o card estourou e foi pulado; os demais válidos seguem (3 - 1 = 2).
     assert len(prods) == 2
@@ -84,7 +89,9 @@ def test_parse_offers_html_resiliente_a_excecao(ofertas_html, collected_at, monk
 
 def test_parse_offers_html(ofertas_html, collected_at):
     prods = parse_offers_html(
-        ofertas_html, source="ofertas", execution_id="exec123", collected_at=collected_at
+        ofertas_html, source="ofertas", category="MLB1051",
+        category_name="Celulares e Telefones", execution_id="exec123",
+        collected_at=collected_at,
     )
     # Card 4 (sem título) é descartado -> 3 produtos
     assert len(prods) == 3
@@ -118,7 +125,43 @@ def test_parse_offers_html(ofertas_html, collected_at):
 
 def test_filtra_so_promocoes_reais(ofertas_html, collected_at):
     prods = parse_offers_html(
-        ofertas_html, source="ofertas", execution_id="exec123", collected_at=collected_at
+        ofertas_html, source="ofertas", category="MLB1051",
+        category_name="Celulares e Telefones", execution_id="exec123",
+        collected_at=collected_at,
     )
     reais = [p for p in prods if p.is_real_promotion]
     assert len(reais) == 2  # cards 1 e 2 (card 3 sem desconto)
+
+
+def test_parse_offers_html_carimba_categoria(ofertas_html, collected_at):
+    prods = parse_offers_html(
+        ofertas_html, source="s", category="MLB1648",
+        category_name="Informática", execution_id="e", collected_at=collected_at,
+    )
+    assert prods
+    assert all(p.category == "MLB1648" and p.category_name == "Informática" for p in prods)
+
+
+# --- _extract_promotion_type: badge do card (por item) ---
+
+def _card(inner: str) -> Tag:
+    return BeautifulSoup(f'<div class="poly-card">{inner}</div>', "lxml").select_one(".poly-card")
+
+
+def test_promotion_type_oferta_do_dia():
+    card = _card('<span class="poly-component__highlight">OFERTA DO DIA</span>')
+    assert _extract_promotion_type(card) == "OFERTA DO DIA"
+
+
+def test_promotion_type_relampago_via_countdown():
+    card = _card('<span class="poly-highlight-countdown__text">Oferta relâmpago</span>')
+    assert _extract_promotion_type(card) == "OFERTA RELÂMPAGO"
+
+
+def test_promotion_type_sem_badge_eh_none():
+    assert _extract_promotion_type(_card("<span>sem badge</span>")) is None
+
+
+def test_promotion_type_ignora_highlight_nao_promocional():
+    card = _card('<span class="poly-component__highlight">MAIS VENDIDO</span>')
+    assert _extract_promotion_type(card) is None

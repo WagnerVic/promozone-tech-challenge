@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS `promozone-desafio.promozone.promotions` (
   image_url        STRING,
   source           STRING    NOT NULL,   -- vitrine que gerou o item
   currency         STRING    NOT NULL,
+  category         STRING    NOT NULL,   -- id da categoria de ofertas (MLB....)
+  category_name    STRING    NOT NULL,   -- nome legível da categoria
+  promotion_type   STRING,               -- badge do card (oferta relâmpago/do dia/...); nullable
   dedupe_key       STRING    NOT NULL,   -- marketplace + item_id + price
   execution_id     STRING    NOT NULL,
   collected_at     TIMESTAMP NOT NULL,

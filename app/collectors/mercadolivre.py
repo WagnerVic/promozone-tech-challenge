@@ -10,14 +10,21 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 
 from app.collectors.base import BaseCollector
 from app.collectors.parsing import parse_offers_html
-from app.core.config import settings
+from app.core.config import resolve_category, settings
 from app.core.logging import get_logger
 from app.models.product import ProductSchema
 
 logger = get_logger(__name__)
 
 # Marcadores do muro anti-bot ("tráfego suspeito → login") do ML.
-_WALL_MARKERS = ("account-verification", "suspicious_traffic", "Para continuar, acesse sua conta")
+# Inclui as duas grafias: serviço `suspicious-traffic-frontend` (hífen) e path
+# `/security/suspicious_traffic` (underscore) — robusto a qual aparece no corpo/URL.
+_WALL_MARKERS = (
+    "account-verification",
+    "suspicious-traffic",
+    "suspicious_traffic",
+    "Para continuar, acesse sua conta",
+)
 
 
 def _looks_walled(url: str, html: str) -> bool:
@@ -78,6 +85,7 @@ class MercadoLivreCollector(BaseCollector):
         self, client: httpx.Client, source: str, seen: set[str]
     ) -> list[ProductSchema]:
         collected_at = datetime.now(UTC)
+        category, category_name = resolve_category(source)
         out: list[ProductSchema] = []
 
         for page in range(1, self.max_pages + 1):
@@ -94,7 +102,8 @@ class MercadoLivreCollector(BaseCollector):
 
             html = resp.text
             page_products = parse_offers_html(
-                html, source=source, execution_id=self.execution_id, collected_at=collected_at
+                html, source=source, category=category, category_name=category_name,
+                execution_id=self.execution_id, collected_at=collected_at,
             )
             if not page_products:
                 # 0 cards pode ser fim da paginação OU muro anti-bot — sinais distintos.

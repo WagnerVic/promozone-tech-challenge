@@ -23,6 +23,9 @@ _STAGING_SCHEMA = [
     bigquery.SchemaField("image_url", "STRING"),
     bigquery.SchemaField("source", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("currency", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("category", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("category_name", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("promotion_type", "STRING"),
     bigquery.SchemaField("dedupe_key", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("execution_id", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("collected_at", "TIMESTAMP", mode="REQUIRED"),
@@ -61,12 +64,14 @@ class BigQueryService:
 
     def ensure_view(self) -> None:
         # "Estado atual": última linha por item_id (separa atual do histórico de preços).
-        # Desempate determinístico (collected_at é por-fonte e pode empatar).
+        # "Atual = visto por último" → last_seen_at é a CHAVE de ordenação (não desempate):
+        # com preço oscilante (100→90→100), a linha de 100 é revista (MATCHED) e tem o
+        # last_seen_at mais recente; ordenar por collected_at elegeria a linha morta de 90.
         sql = f"""
             CREATE OR REPLACE VIEW `{self.view_id}` AS
             SELECT * EXCEPT(_rn) FROM (
               SELECT *, ROW_NUMBER() OVER (
-                PARTITION BY item_id ORDER BY collected_at DESC, last_seen_at DESC, dedupe_key
+                PARTITION BY item_id ORDER BY last_seen_at DESC, collected_at DESC, dedupe_key
               ) AS _rn
               FROM `{self.table_id}`
             )
@@ -114,6 +119,10 @@ class BigQueryService:
         return next(iter(self.client.query(sql).result())).n
 
     def _merge(self, staging_id: str) -> None:
+        # Semântica de atualização na linha (item, preço) já existente:
+        # - category é estável por item → first-write (congela na 1ª observação);
+        # - promotion_type é volátil → last-write (atualiza), alinhado a "atual = visto
+        #   por último" (mesma semântica da view current_promotions).
         cols = ", ".join(_COLS)
         s_cols = ", ".join(f"S.{c}" for c in _COLS)
         sql = f"""
@@ -127,6 +136,6 @@ class BigQueryService:
               INSERT ({cols}, inserted_at, last_seen_at)
               VALUES ({s_cols}, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
             WHEN MATCHED THEN
-              UPDATE SET last_seen_at = CURRENT_TIMESTAMP()
+              UPDATE SET last_seen_at = CURRENT_TIMESTAMP(), promotion_type = S.promotion_type
         """
         self.client.query(sql).result()

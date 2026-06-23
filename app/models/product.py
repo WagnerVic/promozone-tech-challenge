@@ -20,6 +20,9 @@ class ProductSchema(BaseModel):
     image_url: str | None = None
     source: str
     currency: str = "BRL"
+    category: str
+    category_name: str
+    promotion_type: str | None = None
 
     execution_id: str
     collected_at: datetime

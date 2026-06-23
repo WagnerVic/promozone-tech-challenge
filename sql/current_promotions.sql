@@ -4,7 +4,7 @@
 CREATE OR REPLACE VIEW `promozone-desafio.promozone.current_promotions` AS
 SELECT * EXCEPT(_rn) FROM (
   SELECT *, ROW_NUMBER() OVER (
-    PARTITION BY item_id ORDER BY collected_at DESC, last_seen_at DESC, dedupe_key
+    PARTITION BY item_id ORDER BY last_seen_at DESC, collected_at DESC, dedupe_key
   ) AS _rn
   FROM `promozone-desafio.promozone.promotions`
 )

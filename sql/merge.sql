@@ -11,10 +11,12 @@ USING (
 ON T.dedupe_key = S.dedupe_key
 WHEN NOT MATCHED THEN
   INSERT (marketplace, item_id, url, title, price, original_price, discount_percent,
-          seller, image_url, source, currency, dedupe_key, execution_id, collected_at,
-          inserted_at, last_seen_at)
+          seller, image_url, source, currency, category, category_name, promotion_type,
+          dedupe_key, execution_id, collected_at, inserted_at, last_seen_at)
   VALUES (S.marketplace, S.item_id, S.url, S.title, S.price, S.original_price, S.discount_percent,
-          S.seller, S.image_url, S.source, S.currency, S.dedupe_key, S.execution_id, S.collected_at,
-          CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
+          S.seller, S.image_url, S.source, S.currency, S.category, S.category_name, S.promotion_type,
+          S.dedupe_key, S.execution_id, S.collected_at, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
 WHEN MATCHED THEN
-  UPDATE SET last_seen_at = CURRENT_TIMESTAMP();
+  -- category congela (first-write, estável por item); promotion_type atualiza
+  -- (last-write, "atual = visto por último", igual à view current_promotions).
+  UPDATE SET last_seen_at = CURRENT_TIMESTAMP(), promotion_type = S.promotion_type;

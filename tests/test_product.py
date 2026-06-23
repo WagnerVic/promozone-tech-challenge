@@ -15,7 +15,8 @@ _AT = datetime(2026, 6, 20, 12, 0, 0, tzinfo=UTC)
 def _make(**kw) -> ProductSchema:
     base = dict(
         item_id="MLB1", url="u", title="t", price=Decimal("100.00"),
-        source="s", execution_id="e", collected_at=_AT,
+        source="s", category="MLB1051", category_name="Celulares e Telefones",
+        execution_id="e", collected_at=_AT,
     )
     base.update(kw)
     return ProductSchema(**base)

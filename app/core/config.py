@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Annotated
 
 from pydantic import field_validator
@@ -12,7 +13,26 @@ DEFAULT_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
 )
 
-DEFAULT_SOURCES = ["https://www.mercadolivre.com.br/ofertas"]
+# A categoria é metadado declarado (fonte da verdade): coletamos por recorte de
+# categoria porque a vitrine não expõe a categoria por item. A URL é derivada daqui.
+OFERTAS_URL = "https://www.mercadolivre.com.br/ofertas"
+CATEGORIES = {
+    "MLB1051": "Celulares e Telefones",
+    "MLB1648": "Informática",
+    "MLB5726": "Eletrodomésticos",
+}
+DEFAULT_SOURCES = [f"{OFERTAS_URL}?category={cid}" for cid in CATEGORIES]
+
+_RE_CATEGORY = re.compile(r"[?&]category=(MLB\d+)")
+
+
+def resolve_category(url: str) -> tuple[str, str]:
+    """URL da fonte → (category_id, category_name). Único lugar que conhece a convenção."""
+    m = _RE_CATEGORY.search(url or "")
+    if m:
+        cid = m.group(1)
+        return cid, CATEGORIES.get(cid, cid)
+    return "GERAL", "Ofertas (geral)"  # fonte sem ?category= (ex.: vitrine de teste)
 
 
 class Settings(BaseSettings):

@@ -15,7 +15,8 @@ from app.services.bigquery import _STAGING_SCHEMA
 def _product() -> ProductSchema:
     return ProductSchema(
         item_id="MLB1", url="u", title="t", price=Decimal("10.00"),
-        source="s", execution_id="e", collected_at=datetime(2026, 6, 20, tzinfo=UTC),
+        source="s", category="MLB1051", category_name="Celulares e Telefones",
+        execution_id="e", collected_at=datetime(2026, 6, 20, tzinfo=UTC),
     )
 
 
